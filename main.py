@@ -1,7 +1,8 @@
+SEUIL_CONFIANCE = 0.4
+
 import pickle
 from fastapi import FastAPI
 from pydantic import BaseModel
-
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -13,13 +14,9 @@ datetime.now(timezone.utc).isoformat()
 import json
 
 
-
-
 app =  FastAPI( title= "Classification d'intentions"  )
-
 with open( "model.pkl" , "rb" ) as f :
     model = pickle.load(f)
-
 
 
 class Requete(BaseModel):
@@ -33,17 +30,24 @@ def health():
 @app.post("/predict")
 def predict(req: Requete):
     intention = model.predict([req.text])[0]
-    confiance = model.predict_proba([req.text]).max()
+    confiance = round(float(model.predict_proba([req.text]).max()), 3)
 
     date = datetime.now(timezone.utc).isoformat()
+
+
+    fiable = confiance >= SEUIL_CONFIANCE
 
     logs = {
         "text" : req.text , 
         "intention" : intention , 
         "confiance" : confiance , 
-        "date" : date
+        "date" : date, 
+        "fiable" : fiable
     }
+
 
     logger.info(json.dumps(logs , ensure_ascii=False))
 
-    return {"intention": intention, "confiance": round(float(confiance), 3)}
+    return {"intention": intention, 
+            "confiance": confiance,
+            "fiable" : fiable}

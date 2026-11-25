@@ -17,6 +17,7 @@ def test_predict() :
     data = r.json()
     assert isinstance(data["intention"], str)
     assert 0 <= data["confiance"] <= 1
+    assert isinstance( data["fiable"] , bool )
 
 
 def test_alarme() :
